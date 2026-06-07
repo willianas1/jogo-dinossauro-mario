@@ -727,23 +727,13 @@ function updateGame(dt) {
         score += Math.floor(dt * 0.08);
     }
 
-    // Level progression check (every 1000 points)
+    // Level progression (every 1000 points)
     const targetLevel = Math.floor(score / 1000) + 1;
     if (targetLevel > level && !bossActive) {
         level = targetLevel;
         playLevelUpSound();
-        if (score % 3000 >= 1000) { // avoid overlapping with world banner
-            levelUpBannerTimer = 2000;
-            customBannerText = `FASE ${level} UP!`;
-        }
-    }
-
-    // World change check (every 3000 points)
-    const targetWorldIndex = Math.floor(score / 3000) % WORLD_THEMES.length;
-    if (targetWorldIndex !== currentWorldIndex && !bossActive) {
-        currentWorldIndex = targetWorldIndex;
-        levelUpBannerTimer = 3500;
-        customBannerText = WORLD_THEMES[currentWorldIndex].name + '!';
+        levelUpBannerTimer = 2000;
+        customBannerText = `FASE ${level} UP!`;
     }
 
     if (levelUpBannerTimer > 0) {
@@ -927,10 +917,16 @@ function updateGame(dt) {
         if (bossY > CANVAS_HEIGHT + 100) {
             // Boss Battle fully cleared! Return to runner
             bossActive = false;
-            bossState = ''; // reset state
-            nextBossScore = score + 5000; // next boss triggers in 5000 score
+            bossState = '';
+            nextBossScore = score + 5000;
             obstacleTimer = 0;
             nextSpawnTime = 1200;
+
+            // Avança para o próximo cenário após cada chefe derrotado
+            currentWorldIndex = (currentWorldIndex + 1) % WORLD_THEMES.length;
+            levelUpBannerTimer = 3500;
+            customBannerText = WORLD_THEMES[currentWorldIndex].name + '!';
+
             updateStats();
         }
     }

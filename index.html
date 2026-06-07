@@ -3,8 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Super Mario Dino Runner</title>
-    <!-- Google Fonts: Pixel-art Press Start 2P & modern premium Outfit -->
+    <title>Super Mario Runner</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#66fcf1">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Mario Runner">
+    <link rel="apple-touch-icon" href="icons/icon.svg">
+
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -106,7 +116,88 @@
                     <div class="action-buttons">
                         <button class="btn btn-primary" id="btnStartPause">INICIAR</button>
                         <button class="btn btn-secondary" id="btnRestart">REINICIAR</button>
+                        <button class="btn btn-help" id="btnHelp">❓ COMO JOGAR</button>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Como Jogar -->
+        <div class="help-overlay" id="helpOverlay" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+            <div class="help-modal">
+                <div class="help-header">
+                    <h2 class="help-title pixel-text" id="helpTitle">COMO JOGAR</h2>
+                    <button class="help-close" id="btnHelpClose" aria-label="Fechar">✕</button>
+                </div>
+                <div class="help-body">
+
+                    <div class="help-section">
+                        <h3 class="help-section-title">🎮 CONTROLES</h3>
+                        <div class="help-grid">
+                            <div class="help-item"><span class="help-key">▲ / Espaço / W</span><span>Pular</span></div>
+                            <div class="help-item"><span class="help-key">▼ / S</span><span>Abaixar / Língua do Yoshi</span></div>
+                            <div class="help-item"><span class="help-key">◀ ▶ / A D</span><span>Mover (batalha de chefe)</span></div>
+                            <div class="help-item"><span class="help-key">P</span><span>Pausar o jogo</span></div>
+                        </div>
+                    </div>
+
+                    <div class="help-section">
+                        <h3 class="help-section-title">⭐ POWER-UPS</h3>
+                        <div class="help-grid">
+                            <div class="help-item"><span class="help-icon red">🍄</span><span><b>Cogumelo</b> — Mario cresce e aguenta um golpe extra</span></div>
+                            <div class="help-item"><span class="help-icon yellow">⭐</span><span><b>Estrela</b> — 7s de invencibilidade, derrota tudo no caminho</span></div>
+                            <div class="help-item"><span class="help-icon green">🥚</span><span><b>Ovo do Yoshi</b> — Montar no Yoshi; ▼ dispara a língua para comer inimigos (+500pts)</span></div>
+                            <div class="help-item"><span class="help-icon blue">🏎️</span><span><b>Kart</b> — Disponível na Pista do Mario Kart (substitui o Yoshi)</span></div>
+                        </div>
+                    </div>
+
+                    <div class="help-section">
+                        <h3 class="help-section-title">👾 INIMIGOS</h3>
+                        <div class="help-grid">
+                            <div class="help-item"><span class="help-icon brown">🟤</span><span><b>Goomba</b> — Pisar de cima para derrotar (+200 pts)</span></div>
+                            <div class="help-item"><span class="help-icon red">🔴</span><span><b>Casco Koopa</b> — Pisar para chutar (+300 pts); vermelho para se destacar</span></div>
+                            <div class="help-item"><span class="help-icon gray">⚫</span><span><b>Bullet Bill</b> — Esquivar ou usar estrela (+400 pts)</span></div>
+                        </div>
+                    </div>
+
+                    <div class="help-section">
+                        <h3 class="help-section-title">💀 CHEFES (a cada 5.000 pts)</h3>
+                        <div class="help-grid">
+                            <div class="help-item"><span class="help-icon yellow">🐢</span><span><b>Bowser</b> — 3 HP, cospe bolas de fogo; pule na cabeça 3x para vencer</span></div>
+                            <div class="help-item"><span class="help-icon purple">👁️</span><span><b>Pain (Naruto)</b> — 3 HP, dispara 3 anéis Shinra Tensei de alturas diferentes</span></div>
+                            <div class="help-item"><span class="help-icon blue">🧙</span><span><b>Kamek</b> — 3 HP, magia com trajetória ondulante; flutua no ar</span></div>
+                            <div class="help-item"><span class="help-icon red">🔥</span><span><b>Bowser Final</b> — 5 HP aos 10.000 pts — <em>Salve a Princesa Peach!</em></span></div>
+                        </div>
+                    </div>
+
+                    <div class="help-section">
+                        <h3 class="help-section-title">🌍 MUNDOS (mudam após cada chefe)</h3>
+                        <div class="help-grid help-worlds">
+                            <div class="help-item"><span class="help-icon green">🍄</span><span>Reino Cogumelo</span></div>
+                            <div class="help-item"><span class="help-icon purple">⭐</span><span>Reino das Lumas</span></div>
+                            <div class="help-item"><span class="help-icon yellow">🏜️</span><span>Deserto</span></div>
+                            <div class="help-item"><span class="help-icon pink">🏰</span><span>Castelo da Peach</span></div>
+                            <div class="help-item"><span class="help-icon green">🌳</span><span>Floresta dos Yoshis</span></div>
+                            <div class="help-item"><span class="help-icon darkgreen">🌲</span><span>Reino da Floresta</span></div>
+                            <div class="help-item"><span class="help-icon blue">🏎️</span><span>Pista do Mario Kart</span></div>
+                        </div>
+                    </div>
+
+                    <div class="help-section">
+                        <h3 class="help-section-title">🪙 PONTUAÇÃO</h3>
+                        <div class="help-grid help-score">
+                            <div class="help-item"><span class="help-key">Moeda</span><span>+100 pts</span></div>
+                            <div class="help-item"><span class="help-key">Goomba pisado</span><span>+200 pts</span></div>
+                            <div class="help-item"><span class="help-key">Casco chutado</span><span>+300 pts</span></div>
+                            <div class="help-item"><span class="help-key">Bullet Bill ⭐</span><span>+400 pts (só com estrela)</span></div>
+                            <div class="help-item"><span class="help-key">Língua do Yoshi</span><span>+500 pts</span></div>
+                            <div class="help-item"><span class="help-key">Bloco ? atingido</span><span>Solta power-up aleatório</span></div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="help-footer">
+                    <button class="btn btn-primary" id="btnHelpCloseBottom">ENTENDIDO!</button>
                 </div>
             </div>
         </div>
@@ -159,5 +250,40 @@
     <script src="sprites.js"></script>
     <script src="audio.js"></script>
     <script src="game.js"></script>
+
+    <!-- Registro do Service Worker (PWA) -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .catch(() => {/* offline ou contexto sem SW */});
+            });
+        }
+    </script>
+
+    <!-- Modal Como Jogar -->
+    <script>
+        const helpOverlay      = document.getElementById('helpOverlay');
+        const btnHelp          = document.getElementById('btnHelp');
+        const btnHelpClose     = document.getElementById('btnHelpClose');
+        const btnHelpCloseBot  = document.getElementById('btnHelpCloseBottom');
+
+        function openHelp()  { helpOverlay.classList.add('open'); }
+        function closeHelp() { helpOverlay.classList.remove('open'); }
+
+        btnHelp.addEventListener('click', openHelp);
+        btnHelpClose.addEventListener('click', closeHelp);
+        btnHelpCloseBot.addEventListener('click', closeHelp);
+
+        // Fechar clicando fora do modal
+        helpOverlay.addEventListener('click', (e) => {
+            if (e.target === helpOverlay) closeHelp();
+        });
+
+        // Fechar com Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeHelp();
+        });
+    </script>
 </body>
 </html>

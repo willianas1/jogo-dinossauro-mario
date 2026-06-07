@@ -1,0 +1,27 @@
+{
+    "name": "Super Mario Runner",
+    "short_name": "Mario Runner",
+    "description": "Retro Chrome Edition — endless runner com Mario, chefes e múltiplos mundos",
+    "start_url": "./",
+    "scope": "./",
+    "display": "fullscreen",
+    "orientation": "any",
+    "background_color": "#0b0c10",
+    "theme_color": "#66fcf1",
+    "lang": "pt-BR",
+    "categories": ["games", "entertainment"],
+    "icons": [
+        {
+            "src": "icons/icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        },
+        {
+            "src": "icons/icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "maskable"
+        }
+    ]
+}
