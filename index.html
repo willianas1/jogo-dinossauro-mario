@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Super Mario Dino Runner</title>
+    <!-- Google Fonts: Pixel-art Press Start 2P & modern premium Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="arcade-cabinet">
+        <!-- Cabinet Header -->
+        <header class="cabinet-header">
+            <h1 class="pixel-text shine">SUPER MARIO RUNNER</h1>
+            <p class="subtitle">RETRO CHROME EDITION</p>
+        </header>
+
+        <!-- Main Workspace Area -->
+        <div class="cabinet-body">
+            <!-- Screen Column -->
+            <div class="screen-wrapper">
+                <div class="crt-bezel">
+                    <div class="crt-screen" id="crtScreen">
+                        <!-- Screen Overlay for Scanlines and Flicker -->
+                        <div class="crt-overlay"></div>
+                        <!-- Canvas for Game Rendering -->
+                        <canvas id="gameCanvas" width="800" height="400"></canvas>
+                        
+                        <!-- HUD overlays inside the CRT screen -->
+                        <div class="screen-hud select-none">
+                            <div class="hud-score">
+                                <span class="hud-label">COINS</span>
+                                <span class="hud-val" id="hudCoins">00</span>
+                            </div>
+                            <div class="hud-score">
+                                <span class="hud-label">SCORE</span>
+                                <span class="hud-val" id="hudScore">00000</span>
+                            </div>
+                            <div class="hud-score">
+                                <span class="hud-label">HI-SCORE</span>
+                                <span class="hud-val" id="hudHighScore">00000</span>
+                            </div>
+                        </div>
+
+                        <!-- Start/Pause/Game Over Screen Overlay HTML for better text presentation -->
+                        <div class="game-overlay-screen" id="gameOverlay">
+                            <div class="overlay-content" id="overlayContent">
+                                <div class="pixel-text start-title animate-bounce">MARIO BROS RUNNER</div>
+                                <div class="pixel-text blink instruction-text">PRESSIONE ESPAÇO PARA JOGAR</div>
+                                <div class="controls-tips">
+                                    <span><kbd>▲</kbd> / <kbd>Espaço</kbd> : Pular</span>
+                                    <span><kbd>▼</kbd> : Abaixar / Comer (Yoshi)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Control Panel -->
+            <div class="control-panel glass">
+                <div class="panel-section">
+                    <h3 class="panel-title">ESTATÍSTICAS</h3>
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <span class="stat-label">Estado</span>
+                            <span class="stat-value pixel-text green" id="statState">START</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Fase</span>
+                            <span class="stat-value pixel-text red" id="statLevel">1</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Power-Up</span>
+                            <span class="stat-value pixel-text yellow" id="statPower">SMALL</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Montaria</span>
+                            <span class="stat-value pixel-text green" id="statYoshi">NENHUM</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <h3 class="panel-title">CONTROLES DE ÁUDIO</h3>
+                    <div class="audio-controls">
+                        <button class="btn btn-audio" id="btnMute">
+                            <svg id="muteIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                                <path d="M5.889 16H2a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1h3.889l5.294-4.235A1 1 0 0 1 12.8 4.56v14.88a1 1 0 0 1-1.617.8L5.89 16zM22.414 12l2.122-2.121-1.414-1.415L21 10.586l-2.121-2.122-1.415 1.415L19.586 12l-2.122 2.121 1.415 1.415L21 13.414l2.121 2.122 1.414-1.414L22.414 12z"/>
+                            </svg>
+                            <span>SOM</span>
+                        </button>
+                        <div class="volume-slider-container">
+                            <span class="slider-label">Vol</span>
+                            <input type="range" id="volumeSlider" min="0" max="100" value="70">
+                            <span id="volumeValue">70%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <h3 class="panel-title">AÇÃO</h3>
+                    <div class="action-buttons">
+                        <button class="btn btn-primary" id="btnStartPause">INICIAR</button>
+                        <button class="btn btn-secondary" id="btnRestart">REINICIAR</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Virtual controls for touch screen devices -->
+        <div class="virtual-controls select-none" id="virtualControls">
+            <!-- Left/Right controls (displayed only during Boss Battles) -->
+            <div class="boss-arrows-container" id="bossArrows" style="display: none; gap: 10px; flex: 1; margin-right: 15px;">
+                <button class="virtual-btn btn-left" id="vBtnLeft">
+                    <span class="btn-icon">◀</span>
+                    <span class="btn-text">ESQUERDA</span>
+                </button>
+                <button class="virtual-btn btn-right" id="vBtnRight">
+                    <span class="btn-icon">▶</span>
+                    <span class="btn-text">DIREITA</span>
+                </button>
+            </div>
+            
+            <button class="virtual-btn btn-duck" id="vBtnDuck">
+                <span class="btn-icon">▼</span>
+                <span class="btn-text">ABAIXAR</span>
+            </button>
+            <button class="virtual-btn btn-jump" id="vBtnJump">
+                <span class="btn-icon">▲</span>
+                <span class="btn-text">PULAR</span>
+            </button>
+        </div>
+
+        <!-- Cabinet Footer -->
+        <footer class="cabinet-footer">
+            <p>© 2026 SUPER MARIO RUNNER. Feito com ❤️ e HTML5 Canvas.</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="sprites.js"></script>
+    <script src="audio.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
