@@ -14,8 +14,9 @@ const SPRITE_PALETTE = {
     'E': '#4A2A00', // Goomba Dark Brown feet/eyebrows
     
     // Koopa / Yoshi / Environment colors
-    'G': '#38D828', // Yoshi Light Green / Koopa Green / Bushes / Bowser shell
+    'G': '#38D828', // Yoshi Light Green / Bushes / Bowser shell
     'D': '#005800', // Dark Green outline
+    'V': '#8B0000', // Dark Red (Koopa shell outline)
     'P': '#F87858', // Yoshi Peach/Orange boots
     
     // Bullet Bill / Metal colors
@@ -782,15 +783,15 @@ const SPRITES = {
         "................"
     ],
     koopa_shell1: [
-        "......GGGG......",
-        "....GGGGGGGG....",
-        "...GDGGGGGGGG...",
-        "..GDGWWGGWWGG...",
-        "..GGGGWWGGWWG...",
-        ".GGGGGGGGGGGGG.",
-        ".GDGDGDGDGDGDG.",
-        ".GDGDGDGDGDGDG.",
-        ".GKKKKKKKKKKKG.",
+        "......RRRR......",
+        "....RRRRRRRR....",
+        "...RVRRRRRRRR...",
+        "..RVRWWRRWWRR...",
+        "..RRRRWWRRWWR...",
+        ".RRRRRRRRRRRRR.",
+        ".RVRVRVRVRVRVR.",
+        ".RVRVRVRVRVRVR.",
+        ".RKKKKKKKKKKKR.",
         "..KWWWWWWWWWK..",
         "..KWWWWWWWWWK..",
         "...KWWWWWWWK...",
@@ -800,15 +801,15 @@ const SPRITES = {
         "................"
     ],
     koopa_shell2: [
-        "......GGGG......",
-        "....GGGGGGGG....",
-        "...GDGGGGGGGG...",
-        "..GWWGGWWGGGD...",
-        "..WWGGWWGGGGG...",
-        ".GGGGGGGGGGGGG.",
-        ".DGDGDGDGDGDGD.",
-        ".DGDGDGDGDGDGD.",
-        ".GKKKKKKKKKKKG.",
+        "......RRRR......",
+        "....RRRRRRRR....",
+        "...RVRRRRRRRR...",
+        "..RWWRRWWRRRV...",
+        "..WWRRWWRRRRR...",
+        ".RRRRRRRRRRRRR.",
+        ".VRVRVRVRVRVRV.",
+        ".VRVRVRVRVRVRV.",
+        ".RKKKKKKKKKKKR.",
         "..KWWWWWWWWWK..",
         "..KWWWWWWWWWK..",
         "...KWWWWWWWK...",
