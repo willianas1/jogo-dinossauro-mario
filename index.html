@@ -113,26 +113,40 @@
 
         <!-- Virtual controls for touch screen devices -->
         <div class="virtual-controls select-none" id="virtualControls">
-            <!-- Left/Right controls (displayed only during Boss Battles) -->
-            <div class="boss-arrows-container" id="bossArrows" style="display: none; gap: 10px; flex: 1; margin-right: 15px;">
-                <button class="virtual-btn btn-left" id="vBtnLeft">
-                    <span class="btn-icon">◀</span>
-                    <span class="btn-text">ESQUERDA</span>
+            <!-- LADO ESQUERDO (landscape) -->
+            <div class="side-left" id="sideLeft">
+                <button class="virtual-btn btn-jump landscape-mirror" id="vBtnJumpL">
+                    <span class="btn-icon">▲</span>
+                    <span class="btn-text">PULAR</span>
                 </button>
-                <button class="virtual-btn btn-right" id="vBtnRight">
-                    <span class="btn-icon">▶</span>
-                    <span class="btn-text">DIREITA</span>
+                <!-- Boss Battle: Esquerda / Direita -->
+                <div class="boss-arrows-container" id="bossArrows" style="display: none;">
+                    <button class="virtual-btn btn-left" id="vBtnLeft">
+                        <span class="btn-icon">◀</span>
+                        <span class="btn-text">ESQ</span>
+                    </button>
+                    <button class="virtual-btn btn-right" id="vBtnRight">
+                        <span class="btn-icon">▶</span>
+                        <span class="btn-text">DIR</span>
+                    </button>
+                </div>
+                <button class="virtual-btn btn-duck landscape-mirror" id="vBtnDuckL">
+                    <span class="btn-icon">▼</span>
+                    <span class="btn-text">ABAIXAR</span>
                 </button>
             </div>
-            
-            <button class="virtual-btn btn-duck" id="vBtnDuck">
-                <span class="btn-icon">▼</span>
-                <span class="btn-text">ABAIXAR</span>
-            </button>
-            <button class="virtual-btn btn-jump" id="vBtnJump">
-                <span class="btn-icon">▲</span>
-                <span class="btn-text">PULAR</span>
-            </button>
+
+            <!-- LADO DIREITO (portrait + landscape) -->
+            <div class="side-right" id="sideRight">
+                <button class="virtual-btn btn-jump" id="vBtnJump">
+                    <span class="btn-icon">▲</span>
+                    <span class="btn-text">PULAR</span>
+                </button>
+                <button class="virtual-btn btn-duck" id="vBtnDuck">
+                    <span class="btn-icon">▼</span>
+                    <span class="btn-text">ABAIXAR</span>
+                </button>
+            </div>
         </div>
 
         <!-- Cabinet Footer -->

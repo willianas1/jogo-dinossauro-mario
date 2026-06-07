@@ -38,6 +38,9 @@ const btnRestart = document.getElementById('btnRestart');
 
 const vBtnJump = document.getElementById('vBtnJump');
 const vBtnDuck = document.getElementById('vBtnDuck');
+// Botões espelho para o lado esquerdo em landscape
+const vBtnJumpL = document.getElementById('vBtnJumpL');
+const vBtnDuckL = document.getElementById('vBtnDuckL');
 
 // V3 Mobile arrows for Boss Battle
 const vBtnLeft = document.getElementById('vBtnLeft');
@@ -2133,6 +2136,44 @@ vBtnLeft.addEventListener('mouseleave', () => { keys.left = false; });
 vBtnRight.addEventListener('mousedown', () => { if (gameState === STATES.PLAYING) keys.right = true; });
 vBtnRight.addEventListener('mouseup', () => { keys.right = false; });
 vBtnRight.addEventListener('mouseleave', () => { keys.right = false; });
+
+// Botões espelho (lado esquerdo - landscape)
+[vBtnJumpL, vBtnDuckL].forEach(btn => {
+    if (!btn) return;
+    const isJump = btn === vBtnJumpL;
+    btn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        initAudio();
+        if (isJump) {
+            if (gameState === STATES.PLAYING) keys.jump = true;
+            else if (gameState === STATES.START || gameState === STATES.GAMEOVER) resetGame();
+        } else {
+            if (gameState === STATES.PLAYING) {
+                keys.duck = true;
+                if (player.ridingYoshi) player.triggerTongue();
+            }
+        }
+    });
+    btn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        if (isJump) keys.jump = false;
+        else keys.duck = false;
+    });
+    btn.addEventListener('mousedown', () => {
+        initAudio();
+        if (isJump) {
+            if (gameState === STATES.PLAYING) keys.jump = true;
+            else if (gameState === STATES.START || gameState === STATES.GAMEOVER) resetGame();
+        } else {
+            if (gameState === STATES.PLAYING) {
+                keys.duck = true;
+                if (player.ridingYoshi) player.triggerTongue();
+            }
+        }
+    });
+    btn.addEventListener('mouseup', () => { if (isJump) keys.jump = false; else keys.duck = false; });
+    btn.addEventListener('mouseleave', () => { if (isJump) keys.jump = false; else keys.duck = false; });
+});
 
 // Initial HUD & Stat prints
 updateHUD();
