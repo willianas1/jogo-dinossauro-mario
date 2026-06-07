@@ -77,13 +77,21 @@ let bossProjectiles = [];
 let nextBossScore = 5000; // triggers boss at 5000, 10000, 15000, etc.
 let bossVy = 0; // vertical velocity when falling defeated
 
-// Sky Color Interpolation (Day / Sunset / Night / Sunrise)
-const SKY_COLORS = [
-    { top: '#5c94fc', bottom: '#b8e8fc' }, // Phase 1: Dia (Blue)
-    { top: '#c84c0c', bottom: '#ffc080' }, // Phase 2: Entardecer (Orange/Red)
-    { top: '#070718', bottom: '#281048' }, // Phase 3: Noite (Dark Blue/Purple)
-    { top: '#6a4a8a', bottom: '#ffa890' }  // Phase 4: Amanhecer (Lavender/Pink)
+// ==========================================
+// WORLD / SCENARIO SYSTEM
+// ==========================================
+const WORLD_THEMES = [
+    { name: 'REINO COGUMELO',    skyTop: '#5c94fc', skyBottom: '#b8e8fc', groundUnder: '#4a2700', theme: 'mushroom' },
+    { name: 'REINO DAS LUMAS',   skyTop: '#0a0520', skyBottom: '#3a1060', groundUnder: '#1a0a30', theme: 'lumas'    },
+    { name: 'DESERTO',           skyTop: '#c84000', skyBottom: '#f0b030', groundUnder: '#7a5a10', theme: 'desert'   },
+    { name: 'CASTELO DA PEACH',  skyTop: '#703060', skyBottom: '#f0a0c0', groundUnder: '#606060', theme: 'castle'   }
 ];
+const BOWSER_SKY = { skyTop: '#180000', skyBottom: '#600010', groundUnder: '#2a0000' };
+
+let currentWorldIndex = 0;
+let bowserKingdomActive = false;
+let currentGroundUnder = '#4a2700';
+
 let currentSkyTop = '#5c94fc';
 let currentSkyBottom = '#b8e8fc';
 
@@ -698,24 +706,44 @@ function updateGame(dt) {
         score += Math.floor(dt * 0.08);
     }
 
-    // Level progression check (every 1000 points increases Level)
+    // Level progression check (every 1000 points)
     const targetLevel = Math.floor(score / 1000) + 1;
     if (targetLevel > level && !bossActive) {
         level = targetLevel;
         playLevelUpSound();
-        levelUpBannerTimer = 2000; // Display Level Up text for 2s
-        customBannerText = `FASE ${level} UP!`;
+        if (score % 3000 >= 1000) { // avoid overlapping with world banner
+            levelUpBannerTimer = 2000;
+            customBannerText = `FASE ${level} UP!`;
+        }
+    }
+
+    // World change check (every 3000 points)
+    const targetWorldIndex = Math.floor(score / 3000) % WORLD_THEMES.length;
+    if (targetWorldIndex !== currentWorldIndex && !bossActive) {
+        currentWorldIndex = targetWorldIndex;
+        levelUpBannerTimer = 3500;
+        customBannerText = WORLD_THEMES[currentWorldIndex].name + '!';
     }
 
     if (levelUpBannerTimer > 0) {
         levelUpBannerTimer -= dt;
     }
 
-    // Interpolate Sky Colors smoothly towards current phase values
-    const colorIndex = (level - 1) % SKY_COLORS.length;
-    const currentTarget = SKY_COLORS[colorIndex];
-    currentSkyTop = lerpColor(currentSkyTop, currentTarget.top, 0.015 * (dt / 16.67));
-    currentSkyBottom = lerpColor(currentSkyBottom, currentTarget.bottom, 0.015 * (dt / 16.67));
+    // Detect proximity to villains → Bowser Kingdom overlay
+    const proximityRange = 260;
+    bowserKingdomActive = bossActive || gameElements.some(el =>
+        ['goomba', 'bullet_bill'].includes(el.type) &&
+        !el.stomped &&
+        el.x < player.x + proximityRange &&
+        el.x > player.x - 80
+    );
+
+    // Interpolate Sky + Ground colors toward active theme
+    const activeSky = bowserKingdomActive ? BOWSER_SKY : WORLD_THEMES[currentWorldIndex];
+    const lerpFactor = 0.022 * (dt / 16.67);
+    currentSkyTop = lerpColor(currentSkyTop, activeSky.skyTop, lerpFactor);
+    currentSkyBottom = lerpColor(currentSkyBottom, activeSky.skyBottom, lerpFactor);
+    currentGroundUnder = lerpColor(currentGroundUnder, activeSky.groundUnder, lerpFactor);
 
     updateHUD();
 
@@ -1310,8 +1338,11 @@ function resetGame() {
         bossArrowsPanel.style.display = 'none';
     }
 
-    currentSkyTop = SKY_COLORS[0].top;
-    currentSkyBottom = SKY_COLORS[0].bottom;
+    currentWorldIndex = 0;
+    bowserKingdomActive = false;
+    currentSkyTop = WORLD_THEMES[0].skyTop;
+    currentSkyBottom = WORLD_THEMES[0].skyBottom;
+    currentGroundUnder = WORLD_THEMES[0].groundUnder;
 
     player.reset();
     gameElements = [];
@@ -1394,6 +1425,193 @@ function togglePause() {
     }
 }
 
+// ==========================================
+// WORLD BACKGROUND DRAWING FUNCTIONS
+// ==========================================
+
+function drawStarShape(cx, cy, outerR, innerR, color) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+        const angle = (i * Math.PI / 5) - Math.PI / 2;
+        const r = i % 2 === 0 ? outerR : innerR;
+        const px = cx + r * Math.cos(angle);
+        const py = cy + r * Math.sin(angle);
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fill();
+}
+
+function drawLumasBackground() {
+    const t = Date.now();
+    // Twinkling stars
+    for (let i = 0; i < 65; i++) {
+        const x = (i * 137.508) % CANVAS_WIDTH;
+        const y = (i * 97.3) % (GROUND_Y - 30);
+        const twinkle = (Math.sin(t / 700 + i * 1.7) + 1) / 2;
+        ctx.globalAlpha = twinkle * 0.85 + 0.1;
+        const sz = 1 + twinkle * 2;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(Math.floor(x), Math.floor(y), Math.ceil(sz), Math.ceil(sz));
+    }
+    // Large Luma star shapes
+    const lumaPos = [[120, 70], [280, 110], [440, 50], [600, 130], [730, 80]];
+    lumaPos.forEach(([lx, ly], i) => {
+        const pulse = (Math.sin(t / 800 + i * 1.4) + 1) / 2;
+        const r = 9 + pulse * 5;
+        const hue = (t / 25 + i * 72) % 360;
+        ctx.globalAlpha = 0.75 + pulse * 0.25;
+        drawStarShape(lx, ly, r, r / 2.5, `hsl(${hue}, 100%, 72%)`);
+    });
+    // Full moon
+    ctx.globalAlpha = 0.6;
+    ctx.fillStyle = '#e8e0ff';
+    ctx.beginPath();
+    ctx.arc(700, 55, 28, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+}
+
+function drawDesertBackground() {
+    const t = Date.now();
+    // Sun with rays
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = '#fff060';
+    ctx.beginPath();
+    ctx.arc(670, 55, 32, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#fff060';
+    ctx.lineWidth = 3;
+    for (let i = 0; i < 8; i++) {
+        const a = (i * Math.PI / 4) + (t / 3000);
+        ctx.beginPath();
+        ctx.moveTo(670 + Math.cos(a) * 36, 55 + Math.sin(a) * 36);
+        ctx.lineTo(670 + Math.cos(a) * 50, 55 + Math.sin(a) * 50);
+        ctx.stroke();
+    }
+    ctx.lineWidth = 1;
+    // Pyramids
+    ctx.globalAlpha = 0.45;
+    ctx.fillStyle = '#b08020';
+    ctx.beginPath();
+    ctx.moveTo(160, GROUND_Y);
+    ctx.lineTo(80, GROUND_Y - 75);
+    ctx.lineTo(240, GROUND_Y);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(560, GROUND_Y);
+    ctx.lineTo(490, GROUND_Y - 55);
+    ctx.lineTo(630, GROUND_Y);
+    ctx.fill();
+    // Sand dunes foreground
+    ctx.globalAlpha = 0.35;
+    ctx.fillStyle = '#d4a820';
+    ctx.beginPath();
+    ctx.moveTo(0, GROUND_Y);
+    ctx.quadraticCurveTo(80, GROUND_Y - 22, 160, GROUND_Y);
+    ctx.quadraticCurveTo(270, GROUND_Y - 32, 380, GROUND_Y);
+    ctx.quadraticCurveTo(480, GROUND_Y - 18, 580, GROUND_Y);
+    ctx.quadraticCurveTo(690, GROUND_Y - 28, 820, GROUND_Y);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+}
+
+function drawCastleBackground() {
+    ctx.globalAlpha = 0.38;
+    ctx.fillStyle = '#e090b8';
+    // Left tower
+    ctx.fillRect(20, GROUND_Y - 130, 55, 130);
+    for (let i = 0; i < 4; i++) ctx.fillRect(20 + i * 16, GROUND_Y - 150, 11, 20);
+    // Right tower
+    ctx.fillRect(710, GROUND_Y - 110, 55, 110);
+    for (let i = 0; i < 4; i++) ctx.fillRect(710 + i * 16, GROUND_Y - 128, 11, 18);
+    // Connecting wall
+    ctx.fillRect(75, GROUND_Y - 65, 635, 65);
+    // Arch gate
+    ctx.fillStyle = '#b060a0';
+    ctx.beginPath();
+    ctx.arc(392, GROUND_Y - 65, 38, Math.PI, 0);
+    ctx.lineTo(430, GROUND_Y);
+    ctx.lineTo(354, GROUND_Y);
+    ctx.fill();
+    // Windows
+    ctx.fillStyle = '#f8d8f0';
+    [[140, GROUND_Y - 100], [240, GROUND_Y - 100], [545, GROUND_Y - 100], [645, GROUND_Y - 100]].forEach(([wx, wy]) => {
+        ctx.fillRect(wx, wy, 22, 22);
+    });
+    // Pink flag on top of towers
+    ctx.globalAlpha = 0.55;
+    ctx.fillStyle = '#ff80c0';
+    ctx.beginPath();
+    ctx.moveTo(47, GROUND_Y - 155);
+    ctx.lineTo(47, GROUND_Y - 180);
+    ctx.lineTo(67, GROUND_Y - 167);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(737, GROUND_Y - 135);
+    ctx.lineTo(737, GROUND_Y - 158);
+    ctx.lineTo(757, GROUND_Y - 146);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+}
+
+function drawBowserOverlay() {
+    const t = Date.now();
+    // Dark Bowser castle silhouette
+    ctx.globalAlpha = 0.55;
+    ctx.fillStyle = '#0f0000';
+    ctx.fillRect(580, GROUND_Y - 160, 65, 160);
+    for (let i = 0; i < 5; i++) ctx.fillRect(580 + i * 14, GROUND_Y - 176, 10, 16);
+    ctx.fillRect(520, GROUND_Y - 110, 42, 110);
+    ctx.fillRect(645, GROUND_Y - 90, 42, 90);
+    // Fire/lava flames at ground level
+    for (let i = 0; i < 9; i++) {
+        const fx = i * 96 + 20;
+        const fh = 18 + Math.sin(t / 280 + i * 0.9) * 10;
+        // Outer flame (red)
+        ctx.globalAlpha = 0.55;
+        ctx.fillStyle = '#cc2000';
+        ctx.beginPath();
+        ctx.moveTo(fx, GROUND_Y);
+        ctx.quadraticCurveTo(fx + 14, GROUND_Y - fh * 0.6, fx + 16, GROUND_Y - fh);
+        ctx.quadraticCurveTo(fx + 18, GROUND_Y - fh * 0.6, fx + 32, GROUND_Y);
+        ctx.fill();
+        // Inner flame (orange)
+        ctx.globalAlpha = 0.65;
+        ctx.fillStyle = '#ff6000';
+        ctx.beginPath();
+        ctx.moveTo(fx + 6, GROUND_Y);
+        ctx.quadraticCurveTo(fx + 14, GROUND_Y - fh * 0.55, fx + 16, GROUND_Y - fh * 0.75);
+        ctx.quadraticCurveTo(fx + 18, GROUND_Y - fh * 0.55, fx + 26, GROUND_Y);
+        ctx.fill();
+        // Core flame (yellow)
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = '#ffcc00';
+        ctx.beginPath();
+        ctx.moveTo(fx + 11, GROUND_Y);
+        ctx.quadraticCurveTo(fx + 16, GROUND_Y - fh * 0.45, fx + 21, GROUND_Y);
+        ctx.fill();
+    }
+    // Red vignette edges
+    ctx.globalAlpha = 0.22;
+    const vig = ctx.createRadialGradient(CANVAS_WIDTH/2, CANVAS_HEIGHT/2, 80, CANVAS_WIDTH/2, CANVAS_HEIGHT/2, CANVAS_WIDTH * 0.75);
+    vig.addColorStop(0, 'rgba(0,0,0,0)');
+    vig.addColorStop(1, 'rgba(160,0,0,0.8)');
+    ctx.fillStyle = vig;
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    ctx.globalAlpha = 1;
+}
+
+function drawWorldBackground() {
+    const theme = WORLD_THEMES[currentWorldIndex].theme;
+    if (theme === 'lumas')   drawLumasBackground();
+    if (theme === 'desert')  drawDesertBackground();
+    if (theme === 'castle')  drawCastleBackground();
+    if (bowserKingdomActive) drawBowserOverlay();
+}
+
 // Main Render Loop
 function drawGame() {
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -1405,9 +1623,12 @@ function drawGame() {
     ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, CANVAS_WIDTH, GROUND_Y);
 
-    // Underground
-    ctx.fillStyle = '#4a2700';
+    // Underground (color varies by world)
+    ctx.fillStyle = currentGroundUnder;
     ctx.fillRect(0, GROUND_Y, CANVAS_WIDTH, CANVAS_HEIGHT - GROUND_Y);
+
+    // World-specific background decorations (stars, dunes, castle walls, fire...)
+    drawWorldBackground();
 
     // Clouds
     clouds.forEach(c => {
