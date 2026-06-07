@@ -24,6 +24,10 @@ const SPRITE_PALETTE = {
     'N': '#303030', // Dark Metal Grey
     'L': '#A0A0A0', // Light Grey
     
+    // Pain (Naruto) colors
+    'Z': '#C8C0BC', // Pain pale grey skin
+    'Q': '#8050C0', // Rinnegan purple
+
     // Background items
     'C': '#3CBCFC', // Sky Outline Blue
     'H': '#80D010', // Light Green (Hill)
@@ -683,6 +687,46 @@ const SPRITES = {
         "......WWWW..WWWW........",
         "......WWWW..WWWW........",
         "........................"
+    ],
+    boss_pain: [
+        "........................",
+        "....OOO....OOO..........",
+        "...OOOOOOOOOOOO.........",
+        "..OOOOOOOOOOOOOO........",
+        "..OZZZZZZZZZZZZZO.......",
+        "..OZQKZZZZZZQKZZO.......",
+        "..OZQZZZZZZZZQZZO.......",
+        "..OZZZZKZZKZZZZO........",
+        "..OZZZZZZZZZZZZO........",
+        "...OKZZZZZKKO...........",
+        "...KKKKKKKKKKKK.........",
+        "..KKKKKKKKKKKKKK........",
+        "..KKKKKRRRKKKKKK........",
+        ".KKKKKRRRRRRKKKK........",
+        ".KKKKRRRRRRRRKKKK.......",
+        ".KKKKKRRRRKKKKKK........",
+        ".KKKKKKKKKKKKKKKK.......",
+        ".KKKKKKKKKKKKKKKK.......",
+        ".KKKKKKKKKKKKKKK........",
+        "..KKKKKK.KKKKKKK........",
+        "..KKKKK...KKKKK.........",
+        "...KKK.....KKK..........",
+        "...KKK.....KKK..........",
+        "........................"
+    ],
+    projectile_shinra: [
+        "....QQQQ....",
+        "..QQ....QQ..",
+        ".QW......WQ.",
+        ".Q........Q.",
+        "Q..........Q",
+        "Q..........Q",
+        ".Q........Q.",
+        ".QW......WQ.",
+        "..QQ....QQ..",
+        "....QQQQ....",
+        "............",
+        "............"
     ],
     projectile_fire: [
         "....RRRR....",

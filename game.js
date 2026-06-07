@@ -62,7 +62,7 @@ let activePowerUp = 'small'; // 'small' or 'super'
 
 // V3 Boss Battle variables
 let bossActive = false;
-let bossType = ''; // 'bowser', 'sonic', 'kamek'
+let bossType = ''; // 'bowser', 'pain', 'kamek'
 let bossHp = 3;
 let bossX = 900;
 let bossY = GROUND_Y;
@@ -70,7 +70,7 @@ let bossWidth = 32 * PIXEL_SCALE;
 let bossHeight = 32 * PIXEL_SCALE;
 let bossDirection = -1;
 let bossSpeed = 2.0;
-let bossState = 'entering'; // 'entering', 'fighting', 'charging', 'returning', 'defeated'
+let bossState = 'entering'; // 'entering', 'fighting', 'defeated'
 let bossAttackTimer = 0;
 let bossFlashTimer = 0;
 let bossProjectiles = [];
@@ -655,21 +655,21 @@ function updateGame(dt) {
         bossHp = 3;
         bossX = CANVAS_WIDTH + 80;
         
-        // Random Boss Selection: bowser, sonic, kamek
-        const bossesList = ['bowser', 'sonic', 'kamek'];
+        // Random Boss Selection: bowser, pain, kamek
+        const bossesList = ['bowser', 'pain', 'kamek'];
         bossType = bossesList[Math.floor(Math.random() * bossesList.length)];
-        
+
         // Setup Boss dimensions based on Type
         if (bossType === 'bowser') {
             bossWidth = 32 * PIXEL_SCALE;
             bossHeight = 32 * PIXEL_SCALE;
             bossY = GROUND_Y - bossHeight;
             bossSpeed = 2.0;
-        } else if (bossType === 'sonic') {
+        } else if (bossType === 'pain') {
             bossWidth = 24 * PIXEL_SCALE;
             bossHeight = 24 * PIXEL_SCALE;
-            bossY = GROUND_Y - bossHeight;
-            bossSpeed = 2.5;
+            bossY = GROUND_Y - bossHeight - 15; // levita ligeiramente
+            bossSpeed = 2.2;
         } else if (bossType === 'kamek') {
             bossWidth = 24 * PIXEL_SCALE;
             bossHeight = 24 * PIXEL_SCALE;
@@ -729,14 +729,8 @@ function updateGame(dt) {
         levelUpBannerTimer -= dt;
     }
 
-    // Detect proximity to villains → Bowser Kingdom overlay
-    const proximityRange = 260;
-    bowserKingdomActive = bossActive || gameElements.some(el =>
-        ['goomba', 'bullet_bill'].includes(el.type) &&
-        !el.stomped &&
-        el.x < player.x + proximityRange &&
-        el.x > player.x - 80
-    );
+    // Reino do Bowser ativo APENAS durante batalhas contra grandes vilões (chefes)
+    bowserKingdomActive = bossActive;
 
     // Interpolate Sky + Ground colors toward active theme
     const activeSky = bowserKingdomActive ? BOWSER_SKY : WORLD_THEMES[currentWorldIndex];
@@ -780,17 +774,18 @@ function updateGame(dt) {
                 bossDirection = -1;
             }
 
-            // Floats up and down slightly if Kamek
+            // Pain e Kamek levitam suavemente
             if (bossType === 'kamek') {
                 bossY = GROUND_Y - bossHeight - 20 + Math.sin(Date.now() / 200) * 15;
+            } else if (bossType === 'pain') {
+                bossY = GROUND_Y - bossHeight - 15 + Math.sin(Date.now() / 280) * 18;
             }
 
             // Attack cooldown updates
             bossAttackTimer -= dt;
             if (bossAttackTimer <= 0) {
-                // Perform Attack
                 if (bossType === 'bowser') {
-                    // Spits fireball projectile moving left
+                    // Cospe bola de fogo
                     bossProjectiles.push({
                         type: 'fire',
                         x: bossX - 20,
@@ -801,14 +796,27 @@ function updateGame(dt) {
                         height: 12 * PIXEL_SCALE
                     });
                     bossAttackTimer = 1600 + Math.random() * 1000;
-                } else if (bossType === 'sonic') {
-                    // Dash Charge Attack! Sonic transforms into spinball
-                    bossState = 'charging';
-                    bossSpeed = 9.0;
-                    bossDirection = -1;
-                    bossAttackTimer = 2200 + Math.random() * 1000;
+                } else if (bossType === 'pain') {
+                    // Shinra Tensei: dispara 3 anéis gravitacionais em alturas diferentes
+                    const heights = [
+                        bossY + 4 * PIXEL_SCALE,
+                        bossY + 10 * PIXEL_SCALE,
+                        bossY + 16 * PIXEL_SCALE
+                    ];
+                    heights.forEach(hy => {
+                        bossProjectiles.push({
+                            type: 'gravity',
+                            x: bossX - 10,
+                            y: hy,
+                            vx: -5.2,
+                            vy: 0,
+                            width: 12 * PIXEL_SCALE,
+                            height: 12 * PIXEL_SCALE
+                        });
+                    });
+                    bossAttackTimer = 2400 + Math.random() * 1000;
                 } else if (bossType === 'kamek') {
-                    // Cast magic spell projectile (wavy path)
+                    // Projétil mágico com trajetória ondulante
                     bossProjectiles.push({
                         type: 'magic',
                         x: bossX - 20,
@@ -821,29 +829,6 @@ function updateGame(dt) {
                     });
                     bossAttackTimer = 1800 + Math.random() * 1200;
                 }
-            }
-        }
-
-        // Sonic Spinball Charging Loop
-        else if (bossState === 'charging') {
-            bossX += bossSpeed * bossDirection * (dt / 16.67);
-            if (bossX < -60) {
-                // Charged off screen left, stop and prepare to return
-                bossX = -60;
-                bossDirection = 1; // move right
-                bossState = 'returning';
-                bossSpeed = 4.0;
-            }
-        }
-
-        // Sonic walking back to his spot
-        else if (bossState === 'returning') {
-            bossX += bossSpeed * bossDirection * (dt / 16.67);
-            if (bossX >= 580) {
-                bossX = 580;
-                bossDirection = -1;
-                bossState = 'fighting';
-                bossSpeed = 2.5;
             }
         }
 
@@ -1686,8 +1671,8 @@ function drawGame() {
         let key = '';
         if (bossType === 'bowser') {
             key = 'boss_bowser';
-        } else if (bossType === 'sonic') {
-            key = bossState === 'charging' ? 'projectile_spin' : 'boss_sonic';
+        } else if (bossType === 'pain') {
+            key = 'boss_pain';
         } else if (bossType === 'kamek') {
             key = 'boss_kamek';
         }
@@ -1696,13 +1681,9 @@ function drawGame() {
         let flashOverride = null;
         if (bossFlashTimer > 0 && Math.floor(Date.now() / 80) % 2 === 0) {
             flashOverride = {
-                'R': '#FFFFFF',
-                'U': '#FFFFFF',
-                'S': '#FFFFFF',
-                'B': '#FFFFFF',
-                'Y': '#FFFFFF',
-                'G': '#FFFFFF',
-                'P': '#FFFFFF'
+                'R': '#FFFFFF', 'U': '#FFFFFF', 'S': '#FFFFFF',
+                'B': '#FFFFFF', 'Y': '#FFFFFF', 'G': '#FFFFFF',
+                'P': '#FFFFFF', 'O': '#FFFFFF', 'Z': '#FFFFFF', 'Q': '#FFFFFF'
             };
         }
 
@@ -1730,6 +1711,8 @@ function drawGame() {
                 pKey = 'projectile_fire';
             } else if (p.type === 'magic') {
                 pKey = 'projectile_magic';
+            } else if (p.type === 'gravity') {
+                pKey = 'projectile_shinra';
             }
             drawSprite(ctx, pKey, p.x, p.y, pW, pH, true);
         });
