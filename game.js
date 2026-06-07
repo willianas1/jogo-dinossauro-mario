@@ -81,16 +81,20 @@ let bossVy = 0; // vertical velocity when falling defeated
 // WORLD / SCENARIO SYSTEM
 // ==========================================
 const WORLD_THEMES = [
-    { name: 'REINO COGUMELO',    skyTop: '#5c94fc', skyBottom: '#b8e8fc', groundUnder: '#4a2700', theme: 'mushroom' },
-    { name: 'REINO DAS LUMAS',   skyTop: '#0a0520', skyBottom: '#3a1060', groundUnder: '#1a0a30', theme: 'lumas'    },
-    { name: 'DESERTO',           skyTop: '#c84000', skyBottom: '#f0b030', groundUnder: '#7a5a10', theme: 'desert'   },
-    { name: 'CASTELO DA PEACH',  skyTop: '#703060', skyBottom: '#f0a0c0', groundUnder: '#606060', theme: 'castle'   }
+    { name: 'REINO COGUMELO',      skyTop: '#5c94fc', skyBottom: '#b8e8fc', groundUnder: '#4a2700', theme: 'mushroom'   },
+    { name: 'REINO DAS LUMAS',     skyTop: '#0a0520', skyBottom: '#3a1060', groundUnder: '#1a0a30', theme: 'lumas'      },
+    { name: 'DESERTO',             skyTop: '#c84000', skyBottom: '#f0b030', groundUnder: '#7a5a10', theme: 'desert'     },
+    { name: 'CASTELO DA PEACH',    skyTop: '#703060', skyBottom: '#f0a0c0', groundUnder: '#606060', theme: 'castle'     },
+    { name: 'FLORESTA DOS YOSHIS', skyTop: '#1a5000', skyBottom: '#48a020', groundUnder: '#2a4010', theme: 'forest'     },
+    { name: 'REINO DA FLORESTA',   skyTop: '#0a2a00', skyBottom: '#1a5010', groundUnder: '#1a2a08', theme: 'deepforest' },
+    { name: 'PISTA DO MARIO KART', skyTop: '#1060d0', skyBottom: '#80d0ff', groundUnder: '#404040', theme: 'kart'       }
 ];
 const BOWSER_SKY = { skyTop: '#180000', skyBottom: '#600010', groundUnder: '#2a0000' };
 
 let currentWorldIndex = 0;
 let bowserKingdomActive = false;
 let currentGroundUnder = '#4a2700';
+let peachRescueFight = false;
 
 let currentSkyTop = '#5c94fc';
 let currentSkyBottom = '#b8e8fc';
@@ -142,6 +146,7 @@ const player = {
 
     // Yoshi Riding & Starman Invincibility
     ridingYoshi: false,
+    usingKart: false,
     starInvincible: false,
     starTimer: 0,
 
@@ -162,6 +167,7 @@ const player = {
         this.invincible = false;
         this.invincibleTimer = 0;
         this.ridingYoshi = false;
+        this.usingKart = false;
         this.starInvincible = false;
         this.starTimer = 0;
         this.tongueActive = false;
@@ -214,11 +220,15 @@ const player = {
 
         // 5. Adjust Hitboxes based on State
         if (this.ridingYoshi) {
-            this.width = 14 * PIXEL_SCALE;
-            if (activePowerUp === 'super') {
-                this.height = 34 * PIXEL_SCALE; // yoshi_super sprites are 34 rows
+            if (this.usingKart) {
+                this.width = 18 * PIXEL_SCALE;
+                this.height = 20 * PIXEL_SCALE;
+            } else if (activePowerUp === 'super') {
+                this.width = 14 * PIXEL_SCALE;
+                this.height = 34 * PIXEL_SCALE;
             } else {
-                this.height = 29 * PIXEL_SCALE; // yoshi_small sprites effective height (32 - 3 blank rows)
+                this.width = 14 * PIXEL_SCALE;
+                this.height = 29 * PIXEL_SCALE;
             }
         } else {
             if (activePowerUp === 'super') {
@@ -331,24 +341,22 @@ const player = {
         const facing = isWalkingLeft ? false : true;
 
         if (this.ridingYoshi) {
-            drawWidth = 24 * PIXEL_SCALE;
-            if (activePowerUp === 'super') {
-                // yoshi_super sprites are 34 rows — no offset needed
+            if (this.usingKart) {
+                // Mario no kart: sprite único 24x20
+                drawWidth  = 24 * PIXEL_SCALE;
+                drawHeight = 20 * PIXEL_SCALE;
+                spriteKey  = 'mario_in_kart';
+            } else if (activePowerUp === 'super') {
+                drawWidth  = 24 * PIXEL_SCALE;
                 drawHeight = 34 * PIXEL_SCALE;
-                if (this.isJumping) {
-                    spriteKey = 'yoshi_super_jump';
-                } else {
-                    spriteKey = this.runFrame === 0 ? 'yoshi_super_run1' : 'yoshi_super_run2';
-                }
+                spriteKey  = this.isJumping ? 'yoshi_super_jump'
+                           : (this.runFrame === 0 ? 'yoshi_super_run1' : 'yoshi_super_run2');
             } else {
-                // yoshi_small sprites are 32 rows but last 3 are blank; draw 32 but shift up 3px*PIXEL_SCALE so feet stay at ground
+                drawWidth  = 24 * PIXEL_SCALE;
                 drawHeight = 32 * PIXEL_SCALE;
-                drawY = this.y - (3 * PIXEL_SCALE);
-                if (this.isJumping) {
-                    spriteKey = 'yoshi_small_jump';
-                } else {
-                    spriteKey = this.runFrame === 0 ? 'yoshi_small_run1' : 'yoshi_small_run2';
-                }
+                drawY      = this.y - (3 * PIXEL_SCALE);
+                spriteKey  = this.isJumping ? 'yoshi_small_jump'
+                           : (this.runFrame === 0 ? 'yoshi_small_run1' : 'yoshi_small_run2');
             }
         } else {
             if (activePowerUp === 'super') {
@@ -392,7 +400,7 @@ const player = {
     },
 
     triggerTongue() {
-        if (!this.ridingYoshi || this.tongueActive) return;
+        if (!this.ridingYoshi || this.tongueActive || this.usingKart) return;
         this.tongueActive = true;
         this.tongueProgress = 0;
         this.tongueState = 'out';
@@ -577,7 +585,8 @@ function spawnRandomElement() {
 // Spawns power-up when Mystery Block is headbutted
 // Power-up salta para a direita (à frente do Mario) para dar tempo de pegar
 function spawnPowerUp(x, y) {
-    const powerUpsList = ['mushroom', 'star', 'yoshi_egg'];
+    const isKartWorld = WORLD_THEMES[currentWorldIndex].theme === 'kart';
+    const powerUpsList = isKartWorld ? ['mushroom', 'star', 'kart_item'] : ['mushroom', 'star', 'yoshi_egg'];
     const selectedPower = powerUpsList[Math.floor(Math.random() * powerUpsList.length)];
 
     // Velocidade de lançamento: força para frente (direita) + salto alto
@@ -618,17 +627,18 @@ function spawnPowerUp(x, y) {
     } else if (selectedPower === 'yoshi_egg') {
         gameElements.push({
             type: 'yoshi_egg',
-            x: x,
-            y: y,
-            width: 16 * PIXEL_SCALE,
-            height: 16 * PIXEL_SCALE,
-            vx: LAUNCH_VX,
-            vy: LAUNCH_VY,
-            gravity: 0.45,
-            onGround: false,
-            getHitbox() {
-                return { x: this.x, y: this.y, width: this.width, height: this.height };
-            }
+            x: x, y: y,
+            width: 16 * PIXEL_SCALE, height: 16 * PIXEL_SCALE,
+            vx: LAUNCH_VX, vy: LAUNCH_VY, gravity: 0.45, onGround: false,
+            getHitbox() { return { x: this.x, y: this.y, width: this.width, height: this.height }; }
+        });
+    } else if (selectedPower === 'kart_item') {
+        gameElements.push({
+            type: 'kart_item',
+            x: x, y: y,
+            width: 14 * PIXEL_SCALE, height: 12 * PIXEL_SCALE,
+            vx: LAUNCH_VX, vy: LAUNCH_VY, gravity: 0.45, onGround: false,
+            getHitbox() { return { x: this.x, y: this.y, width: this.width, height: this.height }; }
         });
     }
 }
@@ -655,9 +665,17 @@ function updateGame(dt) {
         bossHp = 3;
         bossX = CANVAS_WIDTH + 80;
         
-        // Random Boss Selection: bowser, pain, kamek
-        const bossesList = ['bowser', 'pain', 'kamek'];
-        bossType = bossesList[Math.floor(Math.random() * bossesList.length)];
+        // Ao chegar a 10.000 pontos: Bowser obrigatório para salvar a Peach!
+        if (score >= 10000 && !peachRescueFight) {
+            bossType = 'bowser';
+            bossHp = 5;
+            peachRescueFight = true;
+            levelUpBannerTimer = 5000;
+            customBannerText = 'SALVE A PRINCESA PEACH!';
+        } else {
+            const bossesList = ['bowser', 'pain', 'kamek'];
+            bossType = bossesList[Math.floor(Math.random() * bossesList.length)];
+        }
 
         // Setup Boss dimensions based on Type
         if (bossType === 'bowser') {
@@ -1099,7 +1117,7 @@ function updateGame(dt) {
             }
         }
 
-        else if (el.type === 'yoshi_egg') {
+        else if (el.type === 'yoshi_egg' || el.type === 'kart_item') {
             el.vy += el.gravity;
             el.y += el.vy;
             const eGround = GROUND_Y - el.height;
@@ -1108,7 +1126,6 @@ function updateGame(dt) {
                 el.vy = 0;
                 el.onGround = true;
             }
-            // Enquanto no ar: mantém o impulso; após pousar: desacelera gradualmente
             if (el.onGround) {
                 el.vx = el.vx > 0
                     ? Math.max(-gameSpeed + 1.0, el.vx - 0.15)
@@ -1166,6 +1183,14 @@ function updateGame(dt) {
 
             else if (el.type === 'yoshi_egg') {
                 player.ridingYoshi = true;
+                player.usingKart = false;
+                playEggHatchSound();
+                updateStats();
+                continue;
+            }
+            else if (el.type === 'kart_item') {
+                player.ridingYoshi = true;
+                player.usingKart = true;
                 playEggHatchSound();
                 updateStats();
                 continue;
@@ -1247,24 +1272,27 @@ function playerHit() {
     if (player.starInvincible || player.invincible) return;
 
     if (player.ridingYoshi) {
+        const wasOnKart = player.usingKart;
         player.ridingYoshi = false;
+        player.usingKart = false;
         player.invincible = true;
         player.invincibleTimer = 1500;
         playPowerDownSound();
         updateStats();
-
-        // Spawn escaping Yoshi particle running off-screen right
-        gameElements.push({
-            type: 'escaped_yoshi',
-            x: player.x,
-            y: player.y,
-            width: 24 * PIXEL_SCALE,
-            height: 32 * PIXEL_SCALE,
-            vx: 7.0,
-            vy: -4.0,
-            gravity: 0.5,
-            getHitbox() { return { x:0, y:0, width:0, height:0 }; }
-        });
+        if (!wasOnKart) {
+            gameElements.push({
+                type: 'escaped_yoshi',
+                x: player.x,
+                y: player.y,
+                width: 24 * PIXEL_SCALE,
+                height: 32 * PIXEL_SCALE,
+                vx: 7.0,
+                vy: -4.0,
+                gravity: 0.5,
+                spriteKey: 'yoshi_small_run1',
+                getHitbox() { return { x:0, y:0, width:0, height:0 }; }
+            });
+        }
         return;
     }
 
@@ -1325,6 +1353,7 @@ function resetGame() {
 
     currentWorldIndex = 0;
     bowserKingdomActive = false;
+    peachRescueFight = false;
     currentSkyTop = WORLD_THEMES[0].skyTop;
     currentSkyBottom = WORLD_THEMES[0].skyBottom;
     currentGroundUnder = WORLD_THEMES[0].groundUnder;
@@ -1589,12 +1618,130 @@ function drawBowserOverlay() {
     ctx.globalAlpha = 1;
 }
 
+function drawForestBackground() {
+    const treeX = [50, 180, 320, 460, 620, 770];
+    treeX.forEach((tx, i) => {
+        ctx.globalAlpha = 0.6;
+        ctx.fillStyle = '#5a3010';
+        ctx.fillRect(tx, GROUND_Y - 115, 18, 115);
+        ctx.fillStyle = '#1a7010';
+        ctx.beginPath();
+        ctx.ellipse(tx + 9, GROUND_Y - 122, 38 + (i % 3) * 8, 35, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#28a015';
+        ctx.beginPath();
+        ctx.ellipse(tx + 4, GROUND_Y - 138, 22, 20, 0, 0, Math.PI * 2);
+        ctx.fill();
+        if (i % 2 === 0) {
+            ctx.globalAlpha = 0.85;
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.ellipse(tx + 15, GROUND_Y - 108, 5, 7, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#38D828';
+            ctx.beginPath();
+            ctx.arc(tx + 14, GROUND_Y - 109, 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    });
+    ctx.globalAlpha = 1;
+}
+
+function drawDeepForestBackground() {
+    const t = Date.now();
+    ctx.globalAlpha = 0.6;
+    ctx.fillStyle = '#0a3005';
+    ctx.fillRect(0, 0, CANVAS_WIDTH, GROUND_Y - 40);
+    const treeX = [30, 150, 280, 410, 550, 680, 780];
+    treeX.forEach(tx => {
+        ctx.globalAlpha = 0.65;
+        ctx.fillStyle = '#2a1505';
+        ctx.fillRect(tx, GROUND_Y - 155, 25, 155);
+        ctx.fillStyle = '#0a4a00';
+        ctx.beginPath();
+        ctx.ellipse(tx + 12, GROUND_Y - 158, 50, 45, 0, 0, Math.PI * 2);
+        ctx.fill();
+    });
+    for (let i = 0; i < 22; i++) {
+        const fx = (i * 137.5 + t * 0.03 * (i % 3 + 1)) % CANVAS_WIDTH;
+        const fy = 30 + (i * 87) % (GROUND_Y - 60);
+        const glow = (Math.sin(t / 400 + i * 2.1) + 1) / 2;
+        ctx.globalAlpha = glow * 0.75;
+        ctx.fillStyle = '#c0ff40';
+        ctx.beginPath();
+        ctx.arc(fx, fy, 2, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+}
+
+function drawKartTrackBackground() {
+    const t = Date.now();
+    // Barreiras coloridas no chão (estilo Mario Kart)
+    for (let i = 0; i < 30; i++) {
+        const bx = (i * 30 - Math.floor(t / 80) % 30) % (CANVAS_WIDTH + 30);
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = i % 2 === 0 ? '#ff2020' : '#ffffff';
+        ctx.fillRect(bx, GROUND_Y - 14, 28, 14);
+    }
+    // Linhas de velocidade no céu
+    ctx.globalAlpha = 0.22;
+    for (let i = 0; i < 8; i++) {
+        const lx = ((i * 130 + t / 8) % (CANVAS_WIDTH + 200)) - 100;
+        const ly = 25 + i * 32;
+        ctx.strokeStyle = i % 2 === 0 ? '#ffffff' : '#f0f040';
+        ctx.lineWidth = 2 + (i % 3);
+        ctx.beginPath();
+        ctx.moveTo(lx, ly);
+        ctx.lineTo(lx + 90, ly);
+        ctx.stroke();
+    }
+    ctx.lineWidth = 1;
+    // Balões coloridos
+    const balloons = [
+        [80, 60, '#ff4040'], [220, 38, '#4040ff'],
+        [420, 72, '#40c040'], [580, 45, '#ffcc00'], [730, 65, '#ff40a0']
+    ];
+    balloons.forEach(([bx, by, color]) => {
+        const sway = Math.sin(t / 1200 + bx * 0.01) * 5;
+        ctx.globalAlpha = 0.85;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.ellipse(bx + sway, by, 14, 18, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 0.4;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.ellipse(bx + sway - 4, by - 5, 4, 6, -0.4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 0.55;
+        ctx.strokeStyle = '#555';
+        ctx.beginPath();
+        ctx.moveTo(bx + sway, by + 18);
+        ctx.quadraticCurveTo(bx + sway + 4, by + 35, bx + sway, by + 48);
+        ctx.stroke();
+    });
+    // Bandeira xadrez (chegada)
+    ctx.globalAlpha = 0.35;
+    for (let cy = 0; cy < 8; cy++) {
+        for (let cx = 0; cx < 4; cx++) {
+            ctx.fillStyle = (cx + cy) % 2 === 0 ? '#000000' : '#ffffff';
+            ctx.fillRect(CANVAS_WIDTH - 75 + cx * 11, 18 + cy * 11, 11, 11);
+        }
+    }
+    ctx.globalAlpha = 1;
+    ctx.lineWidth = 1;
+}
+
 function drawWorldBackground() {
     const theme = WORLD_THEMES[currentWorldIndex].theme;
-    if (theme === 'lumas')   drawLumasBackground();
-    if (theme === 'desert')  drawDesertBackground();
-    if (theme === 'castle')  drawCastleBackground();
-    if (bowserKingdomActive) drawBowserOverlay();
+    if (theme === 'lumas')      drawLumasBackground();
+    if (theme === 'desert')     drawDesertBackground();
+    if (theme === 'castle')     drawCastleBackground();
+    if (theme === 'forest')     drawForestBackground();
+    if (theme === 'deepforest') drawDeepForestBackground();
+    if (theme === 'kart')       drawKartTrackBackground();
+    if (bowserKingdomActive)    drawBowserOverlay();
 }
 
 // Main Render Loop
@@ -1657,6 +1804,8 @@ function drawGame() {
             key = 'star';
         } else if (el.type === 'yoshi_egg') {
             key = 'yoshi_egg';
+        } else if (el.type === 'kart_item') {
+            key = 'kart_item';
         } else if (el.type === 'escaped_yoshi') {
             key = el.spriteKey;
         }
