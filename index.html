@@ -112,6 +112,19 @@
                 </div>
 
                 <div class="panel-section">
+                    <h3 class="panel-title">VELOCIDADE</h3>
+                    <div class="speed-control">
+                        <span class="speed-current pixel-text" id="speedValue">ATUAL</span>
+                        <input type="range" id="speedSlider" min="0" max="2" step="1" value="1">
+                        <div class="speed-labels">
+                            <span>Baixa</span>
+                            <span>Atual</span>
+                            <span>Alta</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel-section">
                     <h3 class="panel-title">AÇÃO</h3>
                     <div class="action-buttons">
                         <button class="btn btn-primary" id="btnStartPause">INICIAR</button>
@@ -157,6 +170,7 @@
                             <div class="help-item"><span class="help-icon brown">🟤</span><span><b>Goomba</b> — Pisar de cima para derrotar (+200 pts)</span></div>
                             <div class="help-item"><span class="help-icon red">🔴</span><span><b>Casco Koopa</b> — Pisar para chutar (+300 pts); vermelho para se destacar</span></div>
                             <div class="help-item"><span class="help-icon gray">⚫</span><span><b>Bullet Bill</b> — Esquivar ou usar estrela (+400 pts)</span></div>
+                            <div class="help-item"><span class="help-icon green">🌿</span><span><b>Flor Piranha</b> — Sai do cano; o cano é seguro, só a planta machuca. Pule por cima p/ pegar a mega moeda</span></div>
                         </div>
                     </div>
 
@@ -187,6 +201,8 @@
                         <h3 class="help-section-title">🪙 PONTUAÇÃO</h3>
                         <div class="help-grid help-score">
                             <div class="help-item"><span class="help-key">Moeda</span><span>+100 pts</span></div>
+                            <div class="help-item"><span class="help-key">Super moeda</span><span>+1000 pts (10×, 2 por fase)</span></div>
+                            <div class="help-item"><span class="help-key">Mega moeda ✨</span><span>+1500 pts (15×, acima dos canos)</span></div>
                             <div class="help-item"><span class="help-key">Goomba pisado</span><span>+200 pts</span></div>
                             <div class="help-item"><span class="help-key">Casco chutado</span><span>+300 pts</span></div>
                             <div class="help-item"><span class="help-key">Bullet Bill ⭐</span><span>+400 pts (só com estrela)</span></div>

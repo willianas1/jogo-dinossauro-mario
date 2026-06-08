@@ -1162,6 +1162,82 @@ const SPRITES = {
         "BBBBBBBBBBBBBBBB",
         "BBBBBBBBBBBBBBBB",
         "BBBBBBBBBBBBBBBB"
+    ],
+
+    // Bloco de tijolo (16×16)
+    brick: [
+        "AAAAAAAAAAAAAAAA",
+        "AOOOOOOAAOOOOOOA",
+        "AOOOOOOAAOOOOOOA",
+        "AOOEOOOAAOOEOOOA",
+        "AOOOOOOAAOOOOOOA",
+        "AOOOOOOAAOOOOOOA",
+        "AOOOOOOAAOOOOOOA",
+        "AAAAAAAAAAAAAAAA",
+        "AAOOOOOAAOOOOOAA",
+        "AAOOOOOAAOOOOOAA",
+        "AAOEOOOAAOEOOOAA",
+        "AAOOOOOAAOOOOOAA",
+        "AAOOOOOAAOOOOOAA",
+        "AAOOOOOAAOOOOOAA",
+        "AAOOOOOAAOOOOOAA",
+        "AAAAAAAAAAAAAAAA"
+    ],
+
+    // Cano verde (24×32) - dois tiles de altura
+    pipe: [
+        "KKGGGGGGGGGGGGGGGGGGGGKK",
+        "KGDDDDDDDDDDDDDDDDDDDDGK",
+        "KGDDDDDDDDDDDDDDDDDDDDGK",
+        "KKGGGGGGGGGGGGGGGGGGGGKK",
+        "....KGGGGGGGGGGGGGGK....",
+        "....GDDDDDDDDDDDDDDG....",
+        "....GDDDDDDDDDDDDDDG....",
+        "....GDDDDDDDDDDDDDDG....",
+        "....GDDDDDDDDDDDDDDG....",
+        "....GDDDDDDDDDDDDDDG....",
+        "....GDDDDDDDDDDDDDDG....",
+        "....GDDDDDDDDDDDDDDG....",
+        "....GDDDDDDDDDDDDDDG....",
+        "....GDDDDDDDDDDDDDDG....",
+        "....GDDDDDDDDDDDDDDG....",
+        "....GDDDDDDDDDDDDDDG....",
+        "....GDDDDDDDDDDDDDDG....",
+        "....GDDDDDDDDDDDDDDG....",
+        "....GDDDDDDDDDDDDDDG....",
+        "....GDDDDDDDDDDDDDDG....",
+        "....GDDDDDDDDDDDDDDG....",
+        "....GDDDDDDDDDDDDDDG....",
+        "....GDDDDDDDDDDDDDDG....",
+        "....GDDDDDDDDDDDDDDG....",
+        "....GDDDDDDDDDDDDDDG....",
+        "....GDDDDDDDDDDDDDDG....",
+        "....GDDDDDDDDDDDDDDG....",
+        "....GDDDDDDDDDDDDDDG....",
+        "....GDDDDDDDDDDDDDDG....",
+        "....GDDDDDDDDDDDDDDG....",
+        "....GDDDDDDDDDDDDDDG....",
+        "....GDDDDDDDDDDDDDDG...."
+    ],
+
+    // Flor canibal / Piranha Plant (16×16)
+    piranha_plant: [
+        "....KRRRRRRRRK..",
+        "...KRRRRRRRRRRK.",
+        "..KRRWRRRRRRWRRK",
+        "..KRRWRRRRRRWRRK",
+        "..KRRRRRRRRRRRK.",
+        "..KRRRRRRRRRRRK.",
+        "..KWWWKKKKKWWWK.",
+        "...KKKKKKKKKK...",
+        "....KRRRRRRRRK..",
+        "....KRRRRRRRRK..",
+        "....KGGGGGGGGK..",
+        "....KGGGGGGGGK..",
+        "....KGGGGGGGGK..",
+        "....KGGGGGGGGK..",
+        "....KGGGGGGGGK..",
+        "....KGGGGGGGGK.."
     ]
 };
 

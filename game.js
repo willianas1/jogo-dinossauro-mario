@@ -33,6 +33,8 @@ const statYoshi = document.getElementById('statYoshi');
 const btnMute = document.getElementById('btnMute');
 const volumeSlider = document.getElementById('volumeSlider');
 const volumeValue = document.getElementById('volumeValue');
+const speedSlider = document.getElementById('speedSlider');
+const speedValue = document.getElementById('speedValue');
 const btnStartPause = document.getElementById('btnStartPause');
 const btnRestart = document.getElementById('btnRestart');
 
@@ -51,6 +53,7 @@ const bossArrowsPanel = document.getElementById('bossArrows');
 let gameSpeed = 6.0;
 const baseSpeed = 6.0;
 const maxSpeed = 14.0;
+let speedMultiplier = 1.0; // 0.5 = Baixa, 1.0 = Atual, 1.5 = Alta
 let score = 0;
 let coins = 0;
 let highScore = parseInt(localStorage.getItem('mario_dino_highscore')) || 0;
@@ -98,6 +101,7 @@ let currentWorldIndex = 0;
 let bowserKingdomActive = false;
 let currentGroundUnder = '#4a2700';
 let peachRescueFight = false;
+let superCoinCount   = 0;   // máx 2 super moedas (10×) por fase
 
 let currentSkyTop = '#5c94fc';
 let currentSkyBottom = '#b8e8fc';
@@ -295,6 +299,20 @@ const player = {
         }
 
         this.y += this.vy;
+
+        // Plataforma de tijolos: pouso por cima (superfície contínua)
+        for (const el of gameElements) {
+            if (el.type !== 'brick_platform') continue;
+            const feetY = this.y + this.height;
+            const prevFeetY = feetY - this.vy;
+            const overlapX = this.x + this.width > el.x + 4 && this.x < el.x + el.width - 4;
+            if (overlapX && this.vy >= 0 && prevFeetY <= el.y + 2 && feetY >= el.y) {
+                this.y = el.y - this.height;
+                this.vy = 0;
+                this.isJumping = false;
+                break;
+            }
+        }
 
         // Ground Collision
         const currentGround = GROUND_Y - this.height;
@@ -495,7 +513,7 @@ function spawnRandomElement() {
 
     const r = Math.random();
     
-    if (r < 0.22) {
+    if (r < 0.18) {
         // Goomba
         gameElements.push({
             type: 'goomba',
@@ -512,7 +530,7 @@ function spawnRandomElement() {
                 return { x: this.x + 3*PIXEL_SCALE, y: this.y + 4*PIXEL_SCALE, width: this.width - 6*PIXEL_SCALE, height: this.height - 4*PIXEL_SCALE };
             }
         });
-    } else if (r < 0.40) {
+    } else if (r < 0.33) {
         // Koopa Shell
         gameElements.push({
             type: 'koopa_shell',
@@ -528,7 +546,7 @@ function spawnRandomElement() {
                 return { x: this.x + 2*PIXEL_SCALE, y: this.y + 2*PIXEL_SCALE, width: this.width - 4*PIXEL_SCALE, height: this.height - 2*PIXEL_SCALE };
             }
         });
-    } else if (r < 0.55) {
+    } else if (r < 0.46) {
         // Bullet Bill
         const heights = [GROUND_Y - (16 * PIXEL_SCALE) - 30, GROUND_Y - (16 * PIXEL_SCALE) - 60];
         const flyY = heights[Math.floor(Math.random() * heights.length)];
@@ -544,7 +562,7 @@ function spawnRandomElement() {
                 return { x: this.x + 2*PIXEL_SCALE, y: this.y + 2*PIXEL_SCALE, width: this.width - 4*PIXEL_SCALE, height: this.height - 4*PIXEL_SCALE };
             }
         });
-    } else if (r < 0.76) {
+    } else if (r < 0.60) {
         // Mystery Block
         gameElements.push({
             type: 'mystery_block',
@@ -560,26 +578,90 @@ function spawnRandomElement() {
                 return { x: this.x, y: this.y, width: this.width, height: this.height };
             }
         });
-    } else {
-        // Coin Arc
+    } else if (r < 0.80) {
+        // Arco de moedas (4 moedas, todas normais)
         const startX = CANVAS_WIDTH;
-        const baseY = GROUND_Y - (16 * PIXEL_SCALE) - 50;
-        
-        for (let i = 0; i < 3; i++) {
-            const offsetHeight = i === 1 ? 25 : 0;
+        const baseY  = GROUND_Y - (16 * PIXEL_SCALE) - 50;
+        const arcH   = [0, 22, 38, 22];
+
+        for (let i = 0; i < 4; i++) {
             gameElements.push({
                 type: 'coin',
-                x: startX + (i * 45),
-                y: baseY - offsetHeight,
-                width: 12 * PIXEL_SCALE,
-                height: 12 * PIXEL_SCALE,
+                x: startX + i * 50,
+                y: baseY - arcH[i],
+                width: 12 * PIXEL_SCALE, height: 12 * PIXEL_SCALE,
                 vx: -gameSpeed,
-                spinFrame: Math.floor(Math.random() * 4),
-                spinTimer: 0,
-                collected: false,
-                getHitbox() {
-                    return { x: this.x, y: this.y, width: this.width, height: this.height };
-                }
+                spinFrame: Math.floor(Math.random() * 4), spinTimer: 0, collected: false,
+                getHitbox() { return { x: this.x, y: this.y, width: this.width, height: this.height }; }
+            });
+        }
+
+        // Super moeda 10×: no máximo 2 por fase, flutua sozinha acima do arco
+        if (superCoinCount < 2 && Math.random() < 0.45) {
+            superCoinCount++;
+            const sz = 20 * PIXEL_SCALE;
+            gameElements.push({
+                type: 'super_coin',
+                x: startX + 75, y: baseY - 55,
+                width: sz, height: sz,
+                vx: -gameSpeed,
+                spinFrame: 0, spinTimer: 0, collected: false,
+                getHitbox() { return { x: this.x, y: this.y, width: this.width, height: this.height }; }
+            });
+        }
+
+    } else {
+        // Plataforma de tijolos sólida — Mario pula em cima, anda e desce.
+        // Altura de 2 tijolos: alcançável num pulo e deixa o chão livre por baixo.
+        const brickW  = 16 * PIXEL_SCALE;
+        const hasPipe = Math.random() < 0.70;
+        const platY   = GROUND_Y - (2 * brickW);
+
+        let numBricks, pipeCol = -1;
+        if (hasPipe) {
+            // Trecho de entrada (antes do cano) mais longo — e ainda maior em alta
+            // velocidade — para dar tempo de saltar na plataforma e depois pular o cano.
+            const leadBricks = Math.max(4, Math.min(9, Math.round(3 + gameSpeed * 0.5)));
+            const tailBricks = 2;
+            pipeCol   = leadBricks;             // cano logo após o trecho de entrada
+            numBricks = leadBricks + 1 + tailBricks;
+        } else {
+            numBricks = Math.floor(Math.random() * 3) + 3; // 3–5
+        }
+        const platWidth = numBricks * brickW;
+
+        const platform = {
+            type: 'brick_platform',
+            x: CANVAS_WIDTH, y: platY,
+            width: platWidth, height: brickW,
+            vx: -gameSpeed,
+            numBricks, hasPipe,
+            piranhaOut: true, piranhaTimer: 1400, piranhaInterval: 1400,
+            getHitbox() { return { x: this.x, y: this.y, width: this.width, height: this.height }; }
+        };
+
+        if (hasPipe) {
+            // Cano fica SOBRE a plataforma (não chega ao chão → passagem livre embaixo)
+            const pipeW = Math.round(1.2 * brickW);
+            const pipeH = Math.round(1.2 * brickW);
+            platform.pipeLocalX = pipeCol * brickW + (brickW - pipeW) / 2; // rel. a x
+            platform.pipeW    = pipeW;
+            platform.pipeH    = pipeH;
+            platform.pipeTopY = platY - pipeH;
+        }
+        gameElements.push(platform);
+
+        // Mega moeda (15×) acima do cano — recompensa por subir e pular por cima
+        if (hasPipe) {
+            const coinSize = 26 * PIXEL_SCALE;
+            gameElements.push({
+                type: 'mega_coin',
+                x: CANVAS_WIDTH + platform.pipeLocalX + platform.pipeW / 2 - coinSize / 2,
+                y: platform.pipeTopY - 1.3 * brickW - coinSize / 2,
+                width: coinSize, height: coinSize,
+                vx: -gameSpeed,
+                spinFrame: 0, spinTimer: 0, collected: false,
+                getHitbox() { return { x: this.x, y: this.y, width: this.width, height: this.height }; }
             });
         }
     }
@@ -720,10 +802,11 @@ function updateGame(dt) {
         // Slow down ground scrolling to a complete halt
         gameSpeed = Math.max(0, gameSpeed - 0.12 * (dt / 16.67));
     } else {
-        // Speed increases dynamically per level + minor smooth boost
+        // Início sempre em baseSpeed; o slider controla só a ACELERAÇÃO (ganho gradual)
         const levelSpeedBonus = (level - 1) * 1.25;
         const smoothBonus = (score % 1000) / 1000 * 1.25;
-        gameSpeed = Math.min(maxSpeed, baseSpeed + levelSpeedBonus + smoothBonus);
+        const accel = (levelSpeedBonus + smoothBonus) * speedMultiplier;
+        gameSpeed = Math.min(maxSpeed, baseSpeed + accel);
         score += Math.floor(dt * 0.08);
     }
 
@@ -734,6 +817,7 @@ function updateGame(dt) {
         playLevelUpSound();
         levelUpBannerTimer = 2000;
         customBannerText = `FASE ${level} UP!`;
+        superCoinCount = 0; // libera de novo até 2 super moedas na nova fase
     }
 
     if (levelUpBannerTimer > 0) {
@@ -1061,6 +1145,28 @@ function updateGame(dt) {
                 el.spinTimer = 0;
             }
         }
+
+        else if (el.type === 'super_coin' || el.type === 'mega_coin') {
+            if (el.collected) continue;
+            el.vx = -gameSpeed;
+            el.spinTimer += dt;
+            if (el.spinTimer > 80) {          // gira mais rápido que moeda normal
+                el.spinFrame = (el.spinFrame + 1) % 4;
+                el.spinTimer = 0;
+            }
+        }
+
+        else if (el.type === 'brick_platform') {
+            el.vx = -gameSpeed;
+            // Timer da piranha
+            if (el.hasPipe) {
+                el.piranhaTimer -= dt;
+                if (el.piranhaTimer <= 0) {
+                    el.piranhaOut = !el.piranhaOut;
+                    el.piranhaTimer = el.piranhaInterval;
+                }
+            }
+        }
         
         else if (el.type === 'mystery_block') {
             if (!el.hit) {
@@ -1152,7 +1258,23 @@ function updateGame(dt) {
                 playCoinSound();
                 continue;
             }
-            
+
+            else if (el.type === 'super_coin' && !el.collected) {
+                el.collected = true;
+                coins  += 10;   // 10× moedas
+                score  += 1000; // 10× pontos (moeda normal = 100)
+                playCoinSound();
+                continue;
+            }
+
+            else if (el.type === 'mega_coin' && !el.collected) {
+                el.collected = true;
+                coins  += 15;   // 15× moedas
+                score  += 1500; // 15× pontos
+                playCoinSound();
+                continue;
+            }
+
             else if (el.type === 'mushroom') {
                 if (activePowerUp === 'small') {
                     activePowerUp = 'super';
@@ -1258,7 +1380,18 @@ function updateGame(dt) {
             }
         }
 
-        if (el.x > -el.width - 50 && el.x < CANVAS_WIDTH + 150) {
+        // Cano é inofensivo (Mario pode encostar). Só a planta piranha causa dano.
+        if (el.type === 'brick_platform' && el.hasPipe && el.piranhaOut) {
+            const pX = el.x + el.pipeLocalX;
+            const inset = 3 * PIXEL_SCALE;
+            const piranhaBox = { x: pX + inset, y: el.pipeTopY - 15 * PIXEL_SCALE, width: el.pipeW - inset * 2, height: 15 * PIXEL_SCALE };
+            if (checkCollision(player.getHitbox(), piranhaBox) && !player.starInvincible) {
+                playerHit();
+            }
+        }
+
+        // Margem ampla à direita: plataformas largas e suas moedas nascem além da borda
+        if (el.x > -el.width - 50 && el.x < CANVAS_WIDTH + 650) {
             elementsToKeep.push(el);
         }
     }
@@ -1353,6 +1486,7 @@ function resetGame() {
     currentWorldIndex = 0;
     bowserKingdomActive = false;
     peachRescueFight = false;
+    superCoinCount = 0;
     currentSkyTop = WORLD_THEMES[0].skyTop;
     currentSkyBottom = WORLD_THEMES[0].skyBottom;
     currentGroundUnder = WORLD_THEMES[0].groundUnder;
@@ -1795,6 +1929,36 @@ function drawGame() {
             key = 'bullet_bill';
         } else if (el.type === 'coin') {
             key = `coin_${el.spinFrame + 1}`;
+        } else if (el.type === 'super_coin') {
+            // Super moeda (10×): maior que a normal, com brilho dourado
+            key = `coin_${el.spinFrame + 1}`;
+            ctx.save();
+            ctx.shadowBlur = 16;
+            ctx.shadowColor = '#ffd800';
+            drawSprite(ctx, key, el.x, el.y, w, h, true);
+            ctx.restore();
+            return;
+        } else if (el.type === 'mega_coin') {
+            // Mega moeda (15×): a maior, com brilho pulsante e anel de destaque
+            key = `coin_${el.spinFrame + 1}`;
+            const cx = el.x + w / 2, cy = el.y + h / 2;
+            const pulse = (Math.sin(Date.now() / 180) + 1) / 2; // 0..1
+            ctx.save();
+            ctx.globalAlpha = 0.30 + pulse * 0.4;
+            ctx.strokeStyle = '#fff3a0';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(cx, cy, w / 2 + 5 + pulse * 5, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+            ctx.shadowBlur = 18 + pulse * 16;
+            ctx.shadowColor = '#ffd800';
+            drawSprite(ctx, key, el.x, el.y, w, h, true);
+            ctx.restore();
+            return;
+        } else if (el.type === 'brick_platform') {
+            // Plataformas e canos são desenhados separadamente abaixo
+            return;
         } else if (el.type === 'mystery_block') {
             key = el.hit ? 'mystery_empty' : (el.animFrame === 0 ? 'mystery_1' : 'mystery_2');
         } else if (el.type === 'mushroom') {
@@ -1810,6 +1974,29 @@ function drawGame() {
         }
 
         drawSprite(ctx, key, el.x, el.y, w, h, el.vx <= 0 || el.type === 'escaped_yoshi');
+    });
+
+    // ==========================================
+    // PLATAFORMAS DE TIJOLO + CANO + PIRANHA
+    // ==========================================
+    gameElements.forEach(el => {
+        if (el.type !== 'brick_platform') return;
+        const bW = 16 * PIXEL_SCALE;
+        // Fileira sólida de tijolos
+        for (let i = 0; i < el.numBricks; i++) {
+            drawSprite(ctx, 'brick', el.x + i * bW, el.y, bW, bW, true);
+        }
+        // Cano fica em cima da plataforma + piranha no topo
+        if (el.hasPipe) {
+            const pX = el.x + el.pipeLocalX;
+            drawSprite(ctx, 'pipe', pX, el.pipeTopY, el.pipeW, el.pipeH, true);
+            if (el.piranhaOut) {
+                drawSprite(ctx, 'piranha_plant',
+                    pX + (el.pipeW - 14 * PIXEL_SCALE) / 2,
+                    el.pipeTopY - 15 * PIXEL_SCALE,
+                    14 * PIXEL_SCALE, 15 * PIXEL_SCALE, true);
+            }
+        }
     });
 
     // ==========================================
@@ -2046,6 +2233,24 @@ volumeSlider.addEventListener('input', (e) => {
     volumeValue.textContent = `${val}%`;
     setVolume(val / 100);
 });
+
+// Slider de velocidade: 0 = Baixa (-50%), 1 = Atual, 2 = Alta (+50%)
+const SPEED_LEVELS = [
+    { mult: 0.5, label: 'BAIXA' },
+    { mult: 1.0, label: 'ATUAL' },
+    { mult: 1.5, label: 'ALTA'  }
+];
+function applySpeedLevel(idx) {
+    const lvl = SPEED_LEVELS[idx] || SPEED_LEVELS[1];
+    speedMultiplier = lvl.mult;
+    if (speedValue) speedValue.textContent = lvl.label;
+}
+if (speedSlider) {
+    speedSlider.addEventListener('input', (e) => {
+        applySpeedLevel(parseInt(e.target.value));
+    });
+    applySpeedLevel(parseInt(speedSlider.value)); // estado inicial
+}
 
 // Virtual Touch Controllers for Mobile
 vBtnDuck.addEventListener('touchstart', (e) => {
